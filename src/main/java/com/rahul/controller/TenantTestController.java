@@ -1,8 +1,9 @@
 package com.rahul.controller;
 
+import com.rahul.security.JwtAuthenticationDetails;
 import com.rahul.service.TenantIsolationService;
-import com.rahul.security.TenantContext;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,10 +19,18 @@ public class TenantTestController {
     private final TenantIsolationService tenantIsolationService;
 
     @GetMapping("/users")
-    public List<Map<String, Object>> users() {
-
-        TenantContext.requireTenantId();
+    public List<Map<String, Object>> users(
+            Authentication authentication
+    ) {
 
         return tenantIsolationService.findVisibleUsers();
+    }
+
+    @GetMapping("/me")
+    public Object me(
+            Authentication authentication
+    ) {
+
+        return authentication.getDetails();
     }
 }
