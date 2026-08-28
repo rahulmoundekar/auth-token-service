@@ -20,6 +20,7 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
+                        // Public authentication endpoints
                         .requestMatchers(
                                 "/api/auth/tenants",
                                 "/api/auth/register",
@@ -27,6 +28,7 @@ public class SecurityConfig {
                         )
                         .permitAll()
 
+                        // Health endpoints
                         .requestMatchers(
                                 "/actuator/health",
                                 "/actuator/health/liveness",
@@ -34,11 +36,28 @@ public class SecurityConfig {
                         )
                         .permitAll()
 
+                        // Admin-only endpoints
+                        .requestMatchers(
+                                "/api/admin/**"
+                        )
+                        .hasRole("ADMIN")
+
+                        // User endpoints
+                        .requestMatchers(
+                                "/api/user/**"
+                        )
+                        .hasAnyRole(
+                                "USER",
+                                "ADMIN"
+                        )
+
+                        // Temporary tenant test endpoint
                         .requestMatchers(
                                 "/api/test/tenant/**"
                         )
                         .authenticated()
 
+                        // Everything else requires authentication
                         .anyRequest()
                         .authenticated()
                 )
