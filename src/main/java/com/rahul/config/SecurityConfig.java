@@ -10,26 +10,30 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain securityFilterChain(
-            HttpSecurity http) throws Exception {
+            HttpSecurity http
+    ) throws Exception {
 
         http
                 .csrf(csrf -> csrf.disable())
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // Temporary endpoint for Step 5 testing
                         .requestMatchers(
-                                "/api/test/tenant/**",
-                                "/api/auth/tenants/**",
-                                "/api/auth/**"
+                                "/api/auth/tenants",
+                                "/api/auth/register",
+                                "/api/auth/login"
                         )
                         .permitAll()
 
-                        // Health endpoint
                         .requestMatchers(
                                 "/actuator/health",
                                 "/actuator/health/liveness",
                                 "/actuator/health/readiness"
+                        )
+                        .permitAll()
+
+                        .requestMatchers(
+                                "/api/test/tenant/**"
                         )
                         .permitAll()
 
