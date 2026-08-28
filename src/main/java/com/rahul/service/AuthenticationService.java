@@ -15,13 +15,14 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@Transactional
 public class AuthenticationService {
 
     private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final RefreshTokenService refreshTokenService;
 
     public LoginResponse login(
             LoginRequest request
@@ -74,7 +75,7 @@ public class AuthenticationService {
                         .distinct()
                         .toList();
 
-        String token =
+        String accessToken =
                 jwtService.generateAccessToken(
                         user.getId(),
                         user.getTenant().getId(),
@@ -84,8 +85,12 @@ public class AuthenticationService {
         long expiresIn =
                 900;
 
+        RefreshTokenService.CreatedRefreshToken refreshToken =
+                refreshTokenService.create(user);
+
         return new LoginResponse(
-                token,
+                accessToken,
+                refreshToken.rawToken(),
                 "Bearer",
                 expiresIn
         );

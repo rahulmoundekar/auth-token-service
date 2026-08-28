@@ -24,7 +24,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/tenants",
                                 "/api/auth/register",
-                                "/api/auth/login"
+                                "/api/auth/login",
+                                "/api/auth/refresh"
                         )
                         .permitAll()
 

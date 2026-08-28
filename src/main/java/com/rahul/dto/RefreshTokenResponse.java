@@ -1,6 +1,6 @@
 package com.rahul.dto;
 
-public record LoginResponse(
+public record RefreshTokenResponse(
         String accessToken,
         String refreshToken,
         String tokenType,
