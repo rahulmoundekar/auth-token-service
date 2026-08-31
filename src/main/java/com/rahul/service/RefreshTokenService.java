@@ -1,5 +1,6 @@
 package com.rahul.service;
 
+import com.rahul.config.JwtProperties;
 import com.rahul.config.RefreshTokenProperties;
 import com.rahul.entity.RefreshToken;
 import com.rahul.entity.User;
@@ -24,29 +25,33 @@ public class RefreshTokenService {
     private final RefreshTokenGenerator refreshTokenGenerator;
     private final RefreshTokenProperties refreshTokenProperties;
     private final JwtService jwtService;
+    private final JwtProperties jwtProperties;
 
     @Transactional
-    public CreatedRefreshToken create(User user) {
+    public CreatedRefreshToken create(
+            User user,
+            String tokenFamily
+    ) {
 
         String rawToken =
                 refreshTokenGenerator.generate();
 
         String tokenHash =
-                refreshTokenGenerator.hash(
-                        rawToken
-                );
+                refreshTokenGenerator.hash(rawToken);
 
         Instant expiresAt =
-                Instant.now().plusMillis(
-                        refreshTokenProperties.expiration()
-                );
+                Instant.now()
+                        .plusMillis(
+                                refreshTokenProperties.expiration()
+                        );
 
         RefreshToken refreshToken =
                 new RefreshToken(
                         user,
                         user.getTenant(),
                         tokenHash,
-                        expiresAt
+                        expiresAt,
+                        tokenFamily
                 );
 
         refreshTokenRepository.save(
@@ -55,7 +60,8 @@ public class RefreshTokenService {
 
         return new CreatedRefreshToken(
                 rawToken,
-                expiresAt
+                expiresAt,
+                tokenFamily
         );
     }
 
@@ -133,19 +139,47 @@ public class RefreshTokenService {
                 );
 
         CreatedRefreshToken newRefreshToken =
-                create(user);
+                create(
+                        user,
+                        existing.getTokenFamily()
+                );
 
         return new RefreshResult(
                 accessToken,
                 newRefreshToken.rawToken(),
                 newRefreshToken.expiresAt(),
-                900
+                accessTokenExpiresInSeconds()
+        );
+    }
+
+    @Transactional
+    public void logout(
+            String rawRefreshToken
+    ) {
+
+        String hash =
+                refreshTokenGenerator.hash(
+                        rawRefreshToken
+                );
+
+        RefreshToken existing =
+                refreshTokenRepository
+                        .findByTokenHash(hash)
+                        .orElseThrow(() ->
+                                new InvalidRefreshTokenException(
+                                        "Invalid refresh token"
+                                )
+                        );
+
+        refreshTokenRepository.revokeTokenFamily(
+                existing.getTokenFamily()
         );
     }
 
     public record CreatedRefreshToken(
             String rawToken,
-            Instant expiresAt
+            Instant expiresAt,
+            String tokenFamily
     ) {
     }
 
@@ -155,5 +189,13 @@ public class RefreshTokenService {
             Instant refreshTokenExpiresAt,
             long accessTokenExpiresIn
     ) {
+    }
+
+    public long accessTokenExpiresInSeconds() {
+        return jwtProperties.accessTokenExpiration() / 1000;
+    }
+
+    private String generateTokenFamily() {
+        return java.util.UUID.randomUUID().toString();
     }
 }

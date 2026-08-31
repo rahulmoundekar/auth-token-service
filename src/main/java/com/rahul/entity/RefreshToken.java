@@ -72,6 +72,24 @@ public class RefreshToken {
     )
     private Instant createdAt;
 
+    @Column(
+            name = "token_family",
+            nullable = false,
+            length = 36
+    )
+    private String tokenFamily;
+
+    @Version
+    @Column(
+            nullable = true
+    )
+    private long version;
+
+    @Column(
+            name = "revoked_at"
+    )
+    private Instant revokedAt;
+
     protected RefreshToken() {
     }
 
@@ -79,12 +97,14 @@ public class RefreshToken {
             User user,
             Tenant tenant,
             String tokenHash,
-            Instant expiresAt
+            Instant expiresAt,
+            String tokenFamily
     ) {
         this.user = user;
         this.tenant = tenant;
         this.tokenHash = tokenHash;
         this.expiresAt = expiresAt;
+        this.tokenFamily = tokenFamily;
         this.revoked = false;
         this.createdAt = Instant.now();
     }
@@ -118,6 +138,22 @@ public class RefreshToken {
     }
 
     public void revoke() {
-        this.revoked = true;
+        if (!this.revoked) {
+
+            this.revoked = true;
+            this.revokedAt = Instant.now();
+        }
+    }
+
+    public long getVersion() {
+        return version;
+    }
+
+    public Instant getRevokedAt() {
+        return revokedAt;
+    }
+
+    public String getTokenFamily() {
+        return tokenFamily;
     }
 }

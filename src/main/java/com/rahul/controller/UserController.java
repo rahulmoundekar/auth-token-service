@@ -1,5 +1,6 @@
 package com.rahul.controller;
 
+import com.rahul.security.TenantContext;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,5 +17,13 @@ public class UserController {
 
         return "User profile for: "
                 + authentication.getName();
+    }
+
+    @GetMapping("/tenant")
+    public String tenant() {
+
+        return TenantContext
+                .requireTenantId()
+                .toString();
     }
 }

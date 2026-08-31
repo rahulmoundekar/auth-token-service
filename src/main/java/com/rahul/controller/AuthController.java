@@ -1,13 +1,11 @@
 package com.rahul.controller;
 
-import com.rahul.dto.LoginRequest;
-import com.rahul.dto.LoginResponse;
-import com.rahul.dto.RefreshTokenRequest;
-import com.rahul.dto.RefreshTokenResponse;
+import com.rahul.dto.*;
 import com.rahul.service.AuthenticationService;
 import com.rahul.service.RefreshTokenService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -47,6 +45,19 @@ public class AuthController {
                 result.refreshToken(),
                 "Bearer",
                 result.accessTokenExpiresIn()
+        );
+    }
+
+    @PostMapping("/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void logout(
+            @Valid
+            @RequestBody
+            LogoutRequest request
+    ) {
+
+        refreshTokenService.logout(
+                request.refreshToken()
         );
     }
 }

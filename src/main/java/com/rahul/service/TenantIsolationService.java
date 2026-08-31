@@ -1,7 +1,6 @@
 package com.rahul.service;
 
 import com.rahul.security.TenantContext;
-import com.rahul.security.TenantDatabaseContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -15,7 +14,6 @@ import java.util.Map;
 public class TenantIsolationService {
 
     private final JdbcTemplate jdbcTemplate;
-    private final TenantDatabaseContext tenantDatabaseContext;
 
     @Transactional
     public List<Map<String, Object>> findVisibleUsers() {
@@ -23,8 +21,16 @@ public class TenantIsolationService {
         var tenantId =
                 TenantContext.requireTenantId();
 
-        tenantDatabaseContext.setCurrentTenant(
-                tenantId
+        jdbcTemplate.queryForObject(
+                """
+                SELECT set_config(
+                    'app.current_tenant',
+                    ?,
+                    true
+                )
+                """,
+                String.class,
+                tenantId.toString()
         );
 
         return jdbcTemplate.queryForList(

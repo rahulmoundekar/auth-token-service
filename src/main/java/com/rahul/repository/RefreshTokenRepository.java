@@ -17,10 +17,21 @@ public interface RefreshTokenRepository
 
     @Modifying
     @Query("""
-        update RefreshToken r
-           set r.revoked = true
-         where r.user.id = :userId
-           and r.revoked = false
-    """)
+    update RefreshToken r
+       set r.revoked = true,
+           r.revokedAt = CURRENT_TIMESTAMP
+     where r.user.id = :userId
+       and r.revoked = false
+""")
     int revokeAllActiveByUserId(UUID userId);
+
+    @Modifying
+    @Query("""
+    update RefreshToken r
+       set r.revoked = true,
+           r.revokedAt = CURRENT_TIMESTAMP
+     where r.tokenFamily = :tokenFamily
+       and r.revoked = false
+""")
+    int revokeTokenFamily(String tokenFamily);
 }

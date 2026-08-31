@@ -41,6 +41,8 @@ public class JwtService {
                 );
 
         return Jwts.builder()
+                .issuer(jwtProperties.issuer())
+                .id(UUID.randomUUID().toString())
                 .subject(userId.toString())
                 .claim(
                         "tenant_id",
@@ -62,6 +64,9 @@ public class JwtService {
 
         return Jwts.parser()
                 .verifyWith(signingKey())
+                .requireIssuer(
+                        jwtProperties.issuer()
+                )
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();

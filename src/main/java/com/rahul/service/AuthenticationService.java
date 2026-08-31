@@ -1,9 +1,11 @@
 package com.rahul.service;
 
+import com.rahul.config.JwtProperties;
 import com.rahul.dto.LoginRequest;
 import com.rahul.dto.LoginResponse;
 import com.rahul.entity.User;
 import com.rahul.exception.AuthenticationException;
+import com.rahul.repository.RefreshTokenRepository;
 import com.rahul.repository.UserRepository;
 import com.rahul.repository.UserRoleRepository;
 import com.rahul.security.JwtService;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +27,8 @@ public class AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final JwtProperties jwtProperties;
 
     public LoginResponse login(
             LoginRequest request
@@ -83,17 +88,33 @@ public class AuthenticationService {
                         roles
                 );
 
-        long expiresIn =
-                900;
+        String tokenFamily =
+                UUID.randomUUID().toString();
 
         RefreshTokenService.CreatedRefreshToken refreshToken =
-                refreshTokenService.create(user);
+                refreshTokenService.create(user, tokenFamily);
 
         return new LoginResponse(
                 accessToken,
                 refreshToken.rawToken(),
                 "Bearer",
-                expiresIn
+                accessTokenExpiresInSeconds()
         );
     }
+
+    @Transactional
+    public void logoutAll(
+            UUID userId
+    ) {
+
+        refreshTokenRepository
+                .revokeAllActiveByUserId(
+                        userId
+                );
+    }
+
+    public long accessTokenExpiresInSeconds() {
+        return jwtProperties.accessTokenExpiration() / 1000;
+    }
+
 }

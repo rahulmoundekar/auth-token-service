@@ -90,18 +90,10 @@ public class RegistrationService {
 
         Role userRole =
                 roleRepository
-                        .findAll()
-                        .stream()
-                        .filter(role ->
-                                role.getTenant()
-                                        .getId()
-                                        .equals(tenant.getId())
-                                        &&
-                                        "USER".equals(
-                                                role.getName()
-                                        )
+                        .findByTenantIdAndName(
+                                tenant.getId(),
+                                "USER"
                         )
-                        .findFirst()
                         .orElseGet(() ->
                                 roleRepository.save(
                                         new Role(

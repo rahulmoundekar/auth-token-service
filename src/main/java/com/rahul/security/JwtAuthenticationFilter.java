@@ -62,18 +62,32 @@ public class JwtAuthenticationFilter
             Claims claims =
                     jwtService.parseAndValidate(token);
 
-            UUID userId =
-                    UUID.fromString(
-                            claims.getSubject()
+            String subject =
+                    claims.getSubject();
+
+            String tenantClaim =
+                    claims.get(
+                            "tenant_id",
+                            String.class
                     );
 
+            if (subject == null ||
+                    subject.isBlank() ||
+                    tenantClaim == null ||
+                    tenantClaim.isBlank()) {
+
+                response.setStatus(
+                        HttpServletResponse.SC_UNAUTHORIZED
+                );
+
+                return;
+            }
+
+            UUID userId =
+                    UUID.fromString(subject);
+
             UUID tenantId =
-                    UUID.fromString(
-                            claims.get(
-                                    "tenant_id",
-                                    String.class
-                            )
-                    );
+                    UUID.fromString(tenantClaim);
 
             List<?> rawRoles =
                     claims.get(
@@ -98,6 +112,9 @@ public class JwtAuthenticationFilter
                             )
                             .toList();
 
+            /*
+             * Tenant comes ONLY from the signed JWT.
+             */
             TenantContext.setTenantId(
                     tenantId
             );
