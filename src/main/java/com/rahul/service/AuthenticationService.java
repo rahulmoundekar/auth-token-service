@@ -3,6 +3,7 @@ package com.rahul.service;
 import com.rahul.dto.LoginRequest;
 import com.rahul.dto.LoginResponse;
 import com.rahul.entity.User;
+import com.rahul.exception.AuthenticationException;
 import com.rahul.repository.UserRepository;
 import com.rahul.repository.UserRoleRepository;
 import com.rahul.security.JwtService;
@@ -29,7 +30,7 @@ public class AuthenticationService {
     ) {
 
         if (request.tenantId() == null) {
-            throw new IllegalArgumentException(
+            throw new AuthenticationException(
                     "tenantId is required"
             );
         }
@@ -41,13 +42,13 @@ public class AuthenticationService {
                                 request.username()
                         )
                         .orElseThrow(() ->
-                                new IllegalArgumentException(
+                                new AuthenticationException(
                                         "Invalid credentials"
                                 )
                         );
 
         if (!user.isEnabled()) {
-            throw new IllegalArgumentException(
+            throw new AuthenticationException(
                     "User is disabled"
             );
         }
@@ -56,7 +57,7 @@ public class AuthenticationService {
                 request.password(),
                 user.getPasswordHash()
         )) {
-            throw new IllegalArgumentException(
+            throw new AuthenticationException(
                     "Invalid credentials"
             );
         }

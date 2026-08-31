@@ -56,51 +56,14 @@ public class JwtService {
                 .compact();
     }
 
-    public Claims parseAndValidate(String token) {
+    public Claims parseAndValidate(
+            String token
+    ) {
 
         return Jwts.parser()
                 .verifyWith(signingKey())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-    }
-
-    public UUID extractUserId(String token) {
-
-        Claims claims =
-                parseAndValidate(token);
-
-        return UUID.fromString(
-                claims.getSubject()
-        );
-    }
-
-    public UUID extractTenantId(String token) {
-
-        Claims claims =
-                parseAndValidate(token);
-
-        String tenantId =
-                claims.get("tenant_id", String.class);
-
-        return UUID.fromString(tenantId);
-    }
-
-    public List<String> extractRoles(String token) {
-
-        Claims claims =
-                parseAndValidate(token);
-
-        return claims.get("roles", List.class);
-    }
-
-    public boolean isValid(String token) {
-
-        try {
-            parseAndValidate(token);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
     }
 }

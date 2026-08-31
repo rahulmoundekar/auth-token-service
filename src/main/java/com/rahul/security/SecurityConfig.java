@@ -12,15 +12,25 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(
             HttpSecurity http,
-            JwtAuthenticationFilter jwtAuthenticationFilter
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            RestAuthenticationEntryPoint authenticationEntryPoint,
+            RestAccessDeniedHandler accessDeniedHandler
     ) throws Exception {
 
         http
                 .csrf(csrf -> csrf.disable())
 
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(
+                                authenticationEntryPoint
+                        )
+                        .accessDeniedHandler(
+                                accessDeniedHandler
+                        )
+                )
+
                 .authorizeHttpRequests(auth -> auth
 
-                        // Public authentication endpoints
                         .requestMatchers(
                                 "/api/auth/tenants",
                                 "/api/auth/register",
@@ -29,7 +39,6 @@ public class SecurityConfig {
                         )
                         .permitAll()
 
-                        // Health endpoints
                         .requestMatchers(
                                 "/actuator/health",
                                 "/actuator/health/liveness",
@@ -37,13 +46,11 @@ public class SecurityConfig {
                         )
                         .permitAll()
 
-                        // Admin-only endpoints
                         .requestMatchers(
                                 "/api/admin/**"
                         )
                         .hasRole("ADMIN")
 
-                        // User endpoints
                         .requestMatchers(
                                 "/api/user/**"
                         )
@@ -52,13 +59,11 @@ public class SecurityConfig {
                                 "ADMIN"
                         )
 
-                        // Temporary tenant test endpoint
                         .requestMatchers(
                                 "/api/test/tenant/**"
                         )
                         .authenticated()
 
-                        // Everything else requires authentication
                         .anyRequest()
                         .authenticated()
                 )

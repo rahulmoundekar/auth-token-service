@@ -3,6 +3,7 @@ package com.rahul.service;
 import com.rahul.config.RefreshTokenProperties;
 import com.rahul.entity.RefreshToken;
 import com.rahul.entity.User;
+import com.rahul.exception.InvalidRefreshTokenException;
 import com.rahul.repository.RefreshTokenRepository;
 import com.rahul.repository.UserRoleRepository;
 import com.rahul.security.JwtService;
@@ -72,7 +73,7 @@ public class RefreshTokenService {
                 refreshTokenRepository
                         .findByTokenHash(hash)
                         .orElseThrow(() ->
-                                new IllegalArgumentException(
+                                new InvalidRefreshTokenException(
                                         "Invalid refresh token"
                                 )
                         );
@@ -90,7 +91,7 @@ public class RefreshTokenService {
                             existing.getUser().getId()
                     );
 
-            throw new IllegalArgumentException(
+            throw new InvalidRefreshTokenException(
                     "Refresh token reuse detected"
             );
         }
@@ -100,7 +101,7 @@ public class RefreshTokenService {
 
             existing.revoke();
 
-            throw new IllegalArgumentException(
+            throw new InvalidRefreshTokenException(
                     "Refresh token expired"
             );
         }

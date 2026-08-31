@@ -45,7 +45,17 @@ public class JwtAuthenticationFilter
         }
 
         String token =
-                authorization.substring(7);
+                authorization.substring(7).trim();
+
+        if (token.isBlank()) {
+
+            filterChain.doFilter(
+                    request,
+                    response
+            );
+
+            return;
+        }
 
         try {
 
@@ -64,13 +74,20 @@ public class JwtAuthenticationFilter
                                     String.class
                             )
                     );
-            TenantContext.setTenantId(tenantId);
 
-            List<String> roles =
+            List<?> rawRoles =
                     claims.get(
                             "roles",
                             List.class
                     );
+
+            List<String> roles =
+                    rawRoles == null
+                            ? List.of()
+                            : rawRoles.stream()
+                            .map(Object::toString)
+                            .distinct()
+                            .toList();
 
             var authorities =
                     roles.stream()
@@ -80,6 +97,10 @@ public class JwtAuthenticationFilter
                                     )
                             )
                             .toList();
+
+            TenantContext.setTenantId(
+                    tenantId
+            );
 
             var authentication =
                     new UsernamePasswordAuthenticationToken(
@@ -102,22 +123,18 @@ public class JwtAuthenticationFilter
                             authentication
                     );
 
-        } catch (Exception e) {
-
-            SecurityContextHolder.clearContext();
-
-            response.setStatus(
-                    HttpServletResponse.SC_UNAUTHORIZED
-            );
-
-            return;
-        }
-
-        try {
-
             filterChain.doFilter(
                     request,
                     response
+            );
+
+        } catch (Exception exception) {
+
+            SecurityContextHolder.clearContext();
+            TenantContext.clear();
+
+            response.setStatus(
+                    HttpServletResponse.SC_UNAUTHORIZED
             );
 
         } finally {
