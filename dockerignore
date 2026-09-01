@@ -1,0 +1,16 @@
+.git
+.gitignore
+.idea
+.vscode
+
+target
+logs
+
+.env
+*.log
+
+README.md
+docs
+postman
+
+src/test

@@ -73,11 +73,6 @@ class SecurityRegressionIntegrationTest extends PostgresIntegrationTest {
 
         assertThat(value).isNotBlank();
 
-        System.out.println(
-                "Resolved JWT secret length = "
-                        + value.length()
-        );
-
         assertThat(value.length())
                 .isGreaterThanOrEqualTo(32);
     }
@@ -378,6 +373,22 @@ class SecurityRegressionIntegrationTest extends PostgresIntegrationTest {
         assertThat(successCount).isEqualTo(1);
 
         assertThat(unauthorizedCount).isEqualTo(1);
+    }
+
+
+    @Test
+    void swaggerEndpointsShouldBePublic()
+            throws Exception {
+
+        mockMvc.perform(
+                        get("/v3/api-docs")
+                )
+                .andExpect(status().isOk());
+
+        mockMvc.perform(
+                        get("/swagger-ui/index.html")
+                )
+                .andExpect(status().isOk());
     }
 
     private void ensureAdminRole(String tenantId) {

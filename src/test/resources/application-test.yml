@@ -3,6 +3,14 @@ spring:
     activate:
       on-profile: test
 
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
 jwt:
   secret: 7f3b9a1e6c4d8b2a9f1e5d7c3b6a8f4e2d9c1b7a5e3f6d8
   issuer: auth-token-service-test

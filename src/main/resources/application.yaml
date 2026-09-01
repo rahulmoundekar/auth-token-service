@@ -22,6 +22,22 @@ spring:
     baseline-on-migrate: false
     validate-on-migrate: true
 
+  management:
+    info:
+      app:
+        name: auth-token-service
+        description: Multi-tenant authentication and authorization service
+        version: 0.0.1
+    endpoints:
+      web:
+        exposure:
+          include: health,info
+    endpoint:
+      health:
+        probes:
+          enabled: true
+        show-details: when_authorized
+
 server:
   port: ${SERVER_PORT:8082}
 
@@ -32,3 +48,17 @@ jwt:
 
 refresh-token:
   expiration: ${REFRESH_TOKEN_EXPIRATION:604800000}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    root: INFO
+    com.rahul: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+    org.hibernate.orm.jdbc.bind: WARN

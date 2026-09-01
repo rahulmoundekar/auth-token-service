@@ -2,37 +2,60 @@ services:
 
   postgres:
     image: postgres:17
-
     container_name: auth-postgres
 
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-auth_service}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root}
-      TZ: UTC
-      PGTZ: UTC
+      POSTGRES_DB: ${DB_NAME:-auth_service}
+      POSTGRES_USER: ${DB_ADMIN_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_ADMIN_PASSWORD:-root}
 
     ports:
-      - "5433:5432"
+      - "${DB_PORT:-5433}:5432"
 
     volumes:
-      - auth_postgres_data:/var/lib/postgresql/data
-      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+      - postgres_data:/var/lib/postgresql/data
 
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-auth_service}"
+          "pg_isready -U ${DB_ADMIN_USERNAME:-postgres} -d ${DB_NAME:-auth_service}"
         ]
       interval: 5s
       timeout: 5s
       retries: 10
+      start_period: 10s
 
-    restart: unless-stopped
+  auth-token-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
 
+    container_name: auth-token-service
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-auth_service}
+      DB_USERNAME: ${DB_USERNAME:-auth_app}
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+
+      SERVER_PORT: 8082
+
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ISSUER: ${JWT_ISSUER:-auth-token-service}
+      JWT_ACCESS_TOKEN_EXPIRATION: ${JWT_ACCESS_TOKEN_EXPIRATION:-900000}
+
+      REFRESH_TOKEN_EXPIRATION: ${REFRESH_TOKEN_EXPIRATION:-604800000}
+
+    ports:
+      - "8082:8082"
 
 volumes:
-
-  auth_postgres_data:
-    name: auth-postgres-data
+  postgres_data:

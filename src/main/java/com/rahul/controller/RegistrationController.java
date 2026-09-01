@@ -7,11 +7,19 @@ import com.rahul.dto.UserRegistrationResponse;
 import com.rahul.entity.Tenant;
 import com.rahul.entity.User;
 import com.rahul.service.RegistrationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(
+        name = "Registration",
+        description = "User registration and token lifecycle operations"
+)
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -37,6 +45,27 @@ public class RegistrationController {
         );
     }
 
+    @Operation(
+            summary = "Register a user",
+            description = """
+                Registers a new user within the specified tenant.
+                The password is securely hashed before persistence.
+                """
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "User registered successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid request"
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "User already exists"
+            )
+    })
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
     public UserRegistrationResponse registerUser(

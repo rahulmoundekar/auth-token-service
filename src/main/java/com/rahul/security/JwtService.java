@@ -24,16 +24,6 @@ public class JwtService {
                 jwtProperties.secret()
                         .getBytes(StandardCharsets.UTF_8);
 
-        System.out.println(
-                "JwtService secret length = "
-                        + jwtProperties.secret().length()
-        );
-
-        System.out.println(
-                "JwtService key bytes = "
-                        + keyBytes.length
-        );
-
         return Keys.hmacShaKeyFor(keyBytes);
     }
 

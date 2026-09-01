@@ -4,6 +4,7 @@ import com.rahul.dto.ApiErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -82,5 +83,26 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(status)
                 .body(response);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiErrorResponse> handleMalformedJson(
+            HttpMessageNotReadableException ex, HttpStatus status,
+            HttpServletRequest request
+    ) {
+
+        ApiErrorResponse response =
+                new ApiErrorResponse(
+                        Instant.now(),
+                        HttpStatus.BAD_REQUEST.value(),
+                        "MALFORMED_JSON",
+                        "Request body is invalid",
+                        request.getRequestURI()
+                );
+
+        return ResponseEntity
+                .status(status)
+                .body(response);
+
     }
 }
