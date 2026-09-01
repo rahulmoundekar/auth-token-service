@@ -5,10 +5,12 @@ import com.rahul.config.RefreshTokenProperties;
 import com.rahul.entity.RefreshToken;
 import com.rahul.entity.User;
 import com.rahul.exception.InvalidRefreshTokenException;
+import com.rahul.repository.RefreshTokenLookup;
 import com.rahul.repository.RefreshTokenRepository;
 import com.rahul.repository.UserRoleRepository;
 import com.rahul.security.JwtService;
 import com.rahul.security.RefreshTokenGenerator;
+import com.rahul.security.TenantDatabaseContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,63 +28,39 @@ public class RefreshTokenService {
     private final RefreshTokenProperties refreshTokenProperties;
     private final JwtService jwtService;
     private final JwtProperties jwtProperties;
+    private final TenantDatabaseContext tenantDatabaseContext;
 
     @Transactional
-    public CreatedRefreshToken create(
-            User user,
-            String tokenFamily
-    ) {
+    public CreatedRefreshToken create(User user, String tokenFamily) {
 
-        String rawToken =
-                refreshTokenGenerator.generate();
+        String rawToken = refreshTokenGenerator.generate();
 
-        String tokenHash =
-                refreshTokenGenerator.hash(rawToken);
+        String tokenHash = refreshTokenGenerator.hash(rawToken);
 
-        Instant expiresAt =
-                Instant.now()
-                        .plusMillis(
-                                refreshTokenProperties.expiration()
-                        );
+        Instant expiresAt = Instant.now().plusMillis(refreshTokenProperties.expiration());
 
-        RefreshToken refreshToken =
-                new RefreshToken(
-                        user,
-                        user.getTenant(),
-                        tokenHash,
-                        expiresAt,
-                        tokenFamily
-                );
+        RefreshToken refreshToken = new RefreshToken(user, user.getTenant(), tokenHash, expiresAt, tokenFamily);
 
-        refreshTokenRepository.save(
-                refreshToken
-        );
+        refreshTokenRepository.save(refreshToken);
 
-        return new CreatedRefreshToken(
-                rawToken,
-                expiresAt,
-                tokenFamily
-        );
+        return new CreatedRefreshToken(rawToken, expiresAt, tokenFamily);
     }
 
     @Transactional
-    public RefreshResult rotate(
-            String rawRefreshToken
-    ) {
+    public RefreshResult rotate(String rawRefreshToken) {
 
-        String hash =
-                refreshTokenGenerator.hash(
-                        rawRefreshToken
-                );
+        String hash = refreshTokenGenerator.hash(rawRefreshToken);
 
-        RefreshToken existing =
-                refreshTokenRepository
-                        .findByTokenHash(hash)
-                        .orElseThrow(() ->
-                                new InvalidRefreshTokenException(
-                                        "Invalid refresh token"
-                                )
-                        );
+        tenantDatabaseContext.setRefreshTokenHash(hash);
+
+
+        RefreshTokenLookup lookup = refreshTokenRepository.findForRefreshBootstrap(hash).orElseThrow(() -> new InvalidRefreshTokenException("Invalid refresh token"));
+
+        tenantDatabaseContext.setCurrentTenant(lookup.tenantId());
+
+        tenantDatabaseContext.clearRefreshTokenHash();
+
+        RefreshToken existing = refreshTokenRepository.findByTokenHash(hash).orElseThrow(() -> new InvalidRefreshTokenException("Invalid refresh token"));
 
         /*
          * Reuse detection:
@@ -92,110 +70,68 @@ public class RefreshTokenService {
          */
         if (existing.isRevoked()) {
 
-            refreshTokenRepository
-                    .revokeAllActiveByUserId(
-                            existing.getUser().getId()
-                    );
+            refreshTokenRepository.revokeAllActiveByUserId(existing.getUser().getId());
 
-            throw new InvalidRefreshTokenException(
-                    "Refresh token reuse detected"
-            );
+            throw new InvalidRefreshTokenException("Refresh token reuse detected");
         }
 
-        if (existing.getExpiresAt()
-                .isBefore(Instant.now())) {
+        if (existing.getExpiresAt().isBefore(Instant.now())) {
 
             existing.revoke();
 
+            throw new InvalidRefreshTokenException("Refresh token expired");
+        }
+
+        User user = existing.getUser();
+
+        int revokedRows =
+                refreshTokenRepository.revokeIfActive(
+                        existing.getId(),
+                        existing.getVersion()
+                );
+
+        if (revokedRows != 1) {
             throw new InvalidRefreshTokenException(
-                    "Refresh token expired"
+                    "Refresh token already used"
             );
         }
 
-        User user =
-                existing.getUser();
+        List<String> roles = userRoleRepository.findByUserId(user.getId()).stream().map(userRole -> userRole.getRole().getName()).distinct().toList();
 
-        existing.revoke();
+        String accessToken = jwtService.generateAccessToken(user.getId(), user.getTenant().getId(), roles);
 
-        List<String> roles =
-                userRoleRepository
-                        .findByUserId(
-                                user.getId()
-                        )
-                        .stream()
-                        .map(userRole ->
-                                userRole
-                                        .getRole()
-                                        .getName()
-                        )
-                        .distinct()
-                        .toList();
+        CreatedRefreshToken newRefreshToken = create(user, existing.getTokenFamily());
 
-        String accessToken =
-                jwtService.generateAccessToken(
-                        user.getId(),
-                        user.getTenant().getId(),
-                        roles
-                );
-
-        CreatedRefreshToken newRefreshToken =
-                create(
-                        user,
-                        existing.getTokenFamily()
-                );
-
-        return new RefreshResult(
-                accessToken,
-                newRefreshToken.rawToken(),
-                newRefreshToken.expiresAt(),
-                accessTokenExpiresInSeconds()
-        );
+        return new RefreshResult(accessToken, newRefreshToken.rawToken(), newRefreshToken.expiresAt(), accessTokenExpiresInSeconds());
     }
 
     @Transactional
-    public void logout(
-            String rawRefreshToken
-    ) {
+    public void logout(String rawRefreshToken) {
 
-        String hash =
-                refreshTokenGenerator.hash(
-                        rawRefreshToken
-                );
+        String hash = refreshTokenGenerator.hash(rawRefreshToken);
 
-        RefreshToken existing =
-                refreshTokenRepository
-                        .findByTokenHash(hash)
-                        .orElseThrow(() ->
-                                new InvalidRefreshTokenException(
-                                        "Invalid refresh token"
-                                )
-                        );
+        tenantDatabaseContext.setRefreshTokenHash(hash);
 
-        refreshTokenRepository.revokeTokenFamily(
-                existing.getTokenFamily()
-        );
+        RefreshTokenLookup lookup = refreshTokenRepository.findForRefreshBootstrap(hash).orElseThrow(() -> new InvalidRefreshTokenException("Invalid refresh token"));
+
+        tenantDatabaseContext.setCurrentTenant(lookup.tenantId());
+
+        tenantDatabaseContext.clearRefreshTokenHash();
+
+        RefreshToken existing = refreshTokenRepository.findByTokenHash(hash).orElseThrow(() -> new InvalidRefreshTokenException("Invalid refresh token"));
+
+        refreshTokenRepository.revokeTokenFamily(existing.getTokenFamily());
     }
 
-    public record CreatedRefreshToken(
-            String rawToken,
-            Instant expiresAt,
-            String tokenFamily
-    ) {
+    public record CreatedRefreshToken(String rawToken, Instant expiresAt, String tokenFamily) {
     }
 
-    public record RefreshResult(
-            String accessToken,
-            String refreshToken,
-            Instant refreshTokenExpiresAt,
-            long accessTokenExpiresIn
-    ) {
+    public record RefreshResult(String accessToken, String refreshToken, Instant refreshTokenExpiresAt,
+                                long accessTokenExpiresIn) {
     }
 
     public long accessTokenExpiresInSeconds() {
         return jwtProperties.accessTokenExpiration() / 1000;
     }
 
-    private String generateTokenFamily() {
-        return java.util.UUID.randomUUID().toString();
-    }
 }

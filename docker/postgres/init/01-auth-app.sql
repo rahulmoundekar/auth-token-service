@@ -1,7 +1,12 @@
--- PostgreSQL extensions must be installed by the database administrator.
+-- =========================================================
+-- PostgreSQL bootstrap
+-- Runs only when the PostgreSQL data directory is initialized
+-- =========================================================
+
+-- Install extension as the PostgreSQL administrator.
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
--- Create the restricted application role.
+-- Create restricted application role.
 DO
 $$
     BEGIN
@@ -10,17 +15,21 @@ $$
             FROM pg_roles
             WHERE rolname = 'auth_app'
         ) THEN
+
             CREATE ROLE auth_app
                 LOGIN
                 PASSWORD 'root';
+
         END IF;
     END
 $$;
 
+-- Database access.
 GRANT CONNECT
     ON DATABASE auth_service
     TO auth_app;
 
+-- Schema access.
 GRANT USAGE, CREATE
     ON SCHEMA public
     TO auth_app;

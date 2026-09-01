@@ -9,6 +9,7 @@ import com.rahul.repository.RefreshTokenRepository;
 import com.rahul.repository.UserRepository;
 import com.rahul.repository.UserRoleRepository;
 import com.rahul.security.JwtService;
+import com.rahul.security.TenantDatabaseContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -29,88 +30,43 @@ public class AuthenticationService {
     private final RefreshTokenService refreshTokenService;
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtProperties jwtProperties;
+    private final TenantDatabaseContext tenantDatabaseContext;
 
-    public LoginResponse login(
-            LoginRequest request
-    ) {
+    public LoginResponse login(LoginRequest request) {
 
-        if (request.tenantId() == null) {
-            throw new AuthenticationException(
-                    "tenantId is required"
-            );
+        UUID tenantId = request.tenantId();
+
+        if (tenantId == null) {
+            throw new AuthenticationException("tenantId is required");
         }
 
-        User user =
-                userRepository
-                        .findByTenantIdAndUsername(
-                                request.tenantId(),
-                                request.username()
-                        )
-                        .orElseThrow(() ->
-                                new AuthenticationException(
-                                        "Invalid credentials"
-                                )
-                        );
+        tenantDatabaseContext.setCurrentTenant(tenantId);
+
+        User user = userRepository.findByTenantIdAndUsername(request.tenantId(), request.username()).orElseThrow(() -> new AuthenticationException("Invalid credentials"));
 
         if (!user.isEnabled()) {
-            throw new AuthenticationException(
-                    "User is disabled"
-            );
+            throw new AuthenticationException("User is disabled");
         }
 
-        if (!passwordEncoder.matches(
-                request.password(),
-                user.getPasswordHash()
-        )) {
-            throw new AuthenticationException(
-                    "Invalid credentials"
-            );
+        if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+            throw new AuthenticationException("Invalid credentials");
         }
 
-        List<String> roles =
-                userRoleRepository
-                        .findByUserId(
-                                user.getId()
-                        )
-                        .stream()
-                        .map(userRole ->
-                                userRole
-                                        .getRole()
-                                        .getName()
-                        )
-                        .distinct()
-                        .toList();
+        List<String> roles = userRoleRepository.findByUserId(user.getId()).stream().map(userRole -> userRole.getRole().getName()).distinct().toList();
 
-        String accessToken =
-                jwtService.generateAccessToken(
-                        user.getId(),
-                        user.getTenant().getId(),
-                        roles
-                );
+        String accessToken = jwtService.generateAccessToken(user.getId(), user.getTenant().getId(), roles);
 
-        String tokenFamily =
-                UUID.randomUUID().toString();
+        String tokenFamily = UUID.randomUUID().toString();
 
-        RefreshTokenService.CreatedRefreshToken refreshToken =
-                refreshTokenService.create(user, tokenFamily);
+        RefreshTokenService.CreatedRefreshToken refreshToken = refreshTokenService.create(user, tokenFamily);
 
-        return new LoginResponse(
-                accessToken,
-                refreshToken.rawToken(),
-                "Bearer",
-                accessTokenExpiresInSeconds()
-        );
+        return new LoginResponse(accessToken, refreshToken.rawToken(), "Bearer", accessTokenExpiresInSeconds());
     }
 
     @Transactional
-    public void logoutAll(
-            UUID userId
-    ) {
+    public void logoutAll(UUID userId) {
 
-        refreshTokenRepository
-                .revokeAllActiveByUserId(
-                        userId
-                );
+        refreshTokenRepository.revokeAllActiveByUserId(userId);
     }
 
     public long accessTokenExpiresInSeconds() {

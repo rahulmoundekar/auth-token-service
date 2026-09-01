@@ -65,6 +65,7 @@ class DatabaseSchemaIntegrationTest
                 .hasSize(3);
 
         rows.forEach(row -> {
+
             assertThat(row.get("relrowsecurity"))
                     .isEqualTo(true);
 

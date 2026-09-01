@@ -20,10 +20,21 @@ public class JwtService {
 
     private SecretKey signingKey() {
 
-        return Keys.hmacShaKeyFor(
+        byte[] keyBytes =
                 jwtProperties.secret()
-                        .getBytes(StandardCharsets.UTF_8)
+                        .getBytes(StandardCharsets.UTF_8);
+
+        System.out.println(
+                "JwtService secret length = "
+                        + jwtProperties.secret().length()
         );
+
+        System.out.println(
+                "JwtService key bytes = "
+                        + keyBytes.length
+        );
+
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 
     public String generateAccessToken(

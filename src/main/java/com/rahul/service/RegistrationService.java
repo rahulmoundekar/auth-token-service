@@ -10,6 +10,7 @@ import com.rahul.repository.RoleRepository;
 import com.rahul.repository.TenantRepository;
 import com.rahul.repository.UserRepository;
 import com.rahul.repository.UserRoleRepository;
+import com.rahul.security.TenantDatabaseContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -26,89 +27,46 @@ public class RegistrationService {
     private final RoleRepository roleRepository;
     private final UserRoleRepository userRoleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TenantDatabaseContext tenantDatabaseContext;
 
     @Transactional
-    public Tenant registerTenant(
-            TenantRegistrationRequest request
-    ) {
+    public Tenant registerTenant(TenantRegistrationRequest request) {
 
         if (tenantRepository.existsByName(request.name())) {
-            throw new IllegalArgumentException(
-                    "Tenant already exists"
-            );
+            throw new IllegalArgumentException("Tenant already exists");
         }
 
-        Tenant tenant =
-                new Tenant(request.name());
+        Tenant tenant = new Tenant(request.name());
 
         return tenantRepository.save(tenant);
     }
 
     @Transactional
-    public User registerUser(
-            UserRegistrationRequest request
-    ) {
+    public User registerUser(UserRegistrationRequest request) {
 
-        if (request.tenantId() == null) {
-            throw new IllegalArgumentException(
-                    "tenantId is required"
-            );
+        UUID tenantId = request.tenantId();
+
+        if (tenantId == null) {
+            throw new IllegalArgumentException("tenantId is required");
         }
 
-        Tenant tenant =
-                tenantRepository.findById(
-                        request.tenantId()
-                ).orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Tenant not found"
-                        )
-                );
+        tenantDatabaseContext.setCurrentTenant(tenantId);
 
-        if (userRepository.existsByTenantIdAndUsername(
-                request.tenantId(),
-                request.username()
-        )) {
-            throw new IllegalArgumentException(
-                    "Username already exists for tenant"
-            );
+        Tenant tenant = tenantRepository.findById(tenantId).orElseThrow(() -> new IllegalArgumentException("Tenant not found"));
+
+        if (userRepository.existsByTenantIdAndUsername(tenantId, request.username())) {
+            throw new IllegalArgumentException("Username already exists for tenant");
         }
 
-        String passwordHash =
-                passwordEncoder.encode(
-                        request.password()
-                );
+        String passwordHash = passwordEncoder.encode(request.password());
 
-        User user =
-                new User(
-                        tenant,
-                        request.username(),
-                        passwordHash
-                );
+        User user = new User(tenant, request.username(), passwordHash);
 
-        User savedUser =
-                userRepository.save(user);
+        User savedUser = userRepository.save(user);
 
-        Role userRole =
-                roleRepository
-                        .findByTenantIdAndName(
-                                tenant.getId(),
-                                "USER"
-                        )
-                        .orElseGet(() ->
-                                roleRepository.save(
-                                        new Role(
-                                                tenant,
-                                                "USER"
-                                        )
-                                )
-                        );
+        Role userRole = roleRepository.findByTenantIdAndName(tenant.getId(), "USER").orElseGet(() -> roleRepository.save(new Role(tenant, "USER")));
 
-        userRoleRepository.save(
-                new UserRole(
-                        savedUser,
-                        userRole
-                )
-        );
+        userRoleRepository.save(new UserRole(savedUser, userRole));
 
         return savedUser;
     }

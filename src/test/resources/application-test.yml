@@ -1,0 +1,12 @@
+spring:
+  config:
+    activate:
+      on-profile: test
+
+jwt:
+  secret: 7f3b9a1e6c4d8b2a9f1e5d7c3b6a8f4e2d9c1b7a5e3f6d8
+  issuer: auth-token-service-test
+  access-token-expiration: 900000
+
+refresh-token:
+  expiration: 604800000
