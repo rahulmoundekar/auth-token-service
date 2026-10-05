@@ -16,6 +16,19 @@
 - Testcontainers integration testing
 - Health/readiness and OpenAPI documentation
 
+## 🧭 Engineering Case Study
+
+| Concern | Design decision | Why it matters |
+|---|---|---|
+| Authentication | Short-lived JWT access tokens + refresh lifecycle | Keeps identity checks centralized |
+| Session security | Refresh-token rotation + reuse detection | Limits the impact of stolen refresh tokens |
+| Tenant isolation | Tenant context + PostgreSQL RLS | Security does not stop at the service layer |
+| Concurrency | Optimistic versioning during refresh | Prevents conflicting refresh-token updates |
+
+<p align="center">
+  <img src="assets/architecture.svg" width="100%" alt="Authentication defense-in-depth architecture"/>
+</p>
+
 ## 1. Purpose
 
 The purpose of this service is to centralize authentication and authorization responsibilities instead of implementing login, JWT generation, refresh-token handling, role checks, and tenant isolation independently in every business microservice.
