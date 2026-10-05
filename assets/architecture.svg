@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420" role="img" aria-labelledby="t d">
+<title id="t">Authentication service architecture</title><desc id="d">Authentication request through JWT validation, RBAC, tenant context and PostgreSQL row-level security.</desc>
+<defs><linearGradient id="g" x1="0" x2="1"><stop stop-color="#0b1220"/><stop offset="1" stop-color="#312e81"/></linearGradient></defs>
+<rect width="1200" height="420" rx="24" fill="url(#g)"/><text x="55" y="55" fill="#f8fafc" font-size="25" font-family="Arial" font-weight="700">Defense-in-Depth Authentication</text><text x="55" y="82" fill="#c4b5fd" font-size="14" font-family="Arial">Identity is enforced from the HTTP boundary to the database row.</text>
+<g font-family="Arial" font-size="15" text-anchor="middle"><g fill="#0f172a" stroke="#a78bfa" stroke-width="2"><rect x="45" y="145" width="175" height="95" rx="16"/><rect x="270" y="145" width="175" height="95" rx="16"/><rect x="495" y="145" width="175" height="95" rx="16"/><rect x="720" y="145" width="175" height="95" rx="16"/><rect x="945" y="145" width="210" height="95" rx="16"/></g>
+<text x="132" y="183" fill="#c4b5fd" font-weight="700">Client</text><text x="132" y="207" fill="#cbd5e1">credentials / refresh</text>
+<text x="357" y="183" fill="#c4b5fd" font-weight="700">Spring Security</text><text x="357" y="207" fill="#cbd5e1">JWT + claims</text>
+<text x="582" y="183" fill="#c4b5fd" font-weight="700">RBAC + Tenant</text><text x="582" y="207" fill="#cbd5e1">authorize request</text>
+<text x="807" y="183" fill="#c4b5fd" font-weight="700">Service Layer</text><text x="807" y="207" fill="#cbd5e1">tenant context</text>
+<text x="1050" y="183" fill="#c4b5fd" font-weight="700">PostgreSQL RLS</text><text x="1050" y="207" fill="#cbd5e1">row-level isolation</text></g>
+<g stroke="#64748b" stroke-width="3"><path d="M220 193h50"/><path d="M445 193h50"/><path d="M670 193h50"/><path d="M895 193h50"/></g>
+<text x="600" y="300" text-anchor="middle" fill="#f59e0b" font-size="18" font-family="Arial" font-weight="700">Refresh-token protection</text><text x="600" y="328" text-anchor="middle" fill="#cbd5e1" font-size="14" font-family="Arial">Rotation · reuse detection · token-family revocation · optimistic concurrency</text>
+<text x="55" y="380" fill="#64748b" font-size="12" font-family="Arial">Java 21 · Spring Boot · Spring Security · PostgreSQL 17 · Flyway</text></svg>
