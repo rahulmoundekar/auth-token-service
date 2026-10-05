@@ -1,5 +1,7 @@
 # 🛡️ Auth Token Service
 
+<p align="center">[![CI](https://github.com/rahulmoundekar/auth-token-service/actions/workflows/ci.yml/badge.svg)](https://github.com/rahulmoundekar/auth-token-service/actions/workflows/ci.yml)</p>
+
 <p align="center"><strong>Multi-tenant authentication and authorization service with defense-in-depth data isolation.</strong></p>
 
 <p align="center"><img src="https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white" alt="Java 21"/> <img src="https://img.shields.io/badge/Spring_Security-7.x-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white" alt="Spring Security"/> <img src="https://img.shields.io/badge/JWT-111827?style=for-the-badge" alt="JWT"/> <img src="https://img.shields.io/badge/PostgreSQL_RLS-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL RLS"/></p>
