@@ -1,10 +1,20 @@
-# Auth Token Service
+# 🛡️ Auth Token Service
 
-A production-oriented, multi-tenant authentication and authorization service built with **Java 21, Spring Boot 4.1.1, Spring Security, JWT, PostgreSQL 17, Flyway, PostgreSQL Row-Level Security (RLS), Docker, Testcontainers, and Maven**.
+<p align="center"><strong>Multi-tenant authentication and authorization service with defense-in-depth data isolation.</strong></p>
 
-The service is designed to provide a reusable authentication boundary for multiple applications while keeping tenant data isolated at both the application-security layer and the PostgreSQL database layer.
+<p align="center"><img src="https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white" alt="Java 21"/> <img src="https://img.shields.io/badge/Spring_Security-7.x-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white" alt="Spring Security"/> <img src="https://img.shields.io/badge/JWT-111827?style=for-the-badge" alt="JWT"/> <img src="https://img.shields.io/badge/PostgreSQL_RLS-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL RLS"/></p>
 
----
+> A reusable authentication boundary for SaaS, B2B and microservice ecosystems, covering token lifecycle, RBAC and tenant isolation from the HTTP layer down to PostgreSQL.
+
+## 🎯 What This Project Demonstrates
+
+- JWT access tokens and role-based authorization
+- Rotating refresh tokens and reuse detection
+- Multi-tenant username uniqueness
+- PostgreSQL Row-Level Security (RLS)
+- Flyway migrations and standardized errors
+- Testcontainers integration testing
+- Health/readiness and OpenAPI documentation
 
 ## 1. Purpose
 
